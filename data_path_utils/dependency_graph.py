@@ -24,7 +24,7 @@ def get_label_string(node: ast.JoinedStr) -> str:
             if isinstance(str_piece.value, ast.Attribute):
                 strings.append(str_piece.value.attr)
             elif isinstance(str_piece.value, ast.Name):
-                strings.append(str_piece.value.id, str_piece.value.id)
+                strings.append(str_piece.value.id)
     return ''.join(strings)
 
 def get_argument_label(func_call_node) -> Optional[str]:

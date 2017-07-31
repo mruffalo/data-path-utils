@@ -138,16 +138,16 @@ def plot_network(g: nx.DiGraph, labels: Set[str], output_path: Path):
     print('Running', ' '.join(command))
     check_call(command)
 
-def main(script_dir: Path):
-    graph, labels = build_dependency_graph(script_dir)
+def main():
+    p = ArgumentParser()
+    p.add_argument('script_dir', type=Path, nargs='?', default=Path())
+    args = p.parse_args()
+
+    graph, labels = build_dependency_graph(args.script_dir)
     pprint(graph.nodes())
 
     output_path = create_output_path('dependency_graph')
     plot_network(graph, labels, output_path)
 
 if __name__ == '__main__':
-    p = ArgumentParser()
-    p.add_argument('script_dir', type=Path, nargs='?', default=Path())
-    args = p.parse_args()
-
-    main(args.script_dir)
+    main()

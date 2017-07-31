@@ -27,7 +27,7 @@ def get_script_dependencies(graph: nx.DiGraph, script: Path, data_labels: Set[st
             NO_COLOR,
         )
 
-if __name__ == '__main__':
+def main():
     p = ArgumentParser()
     p.add_argument('script_filename', type=Path)
     args = p.parse_args()
@@ -36,3 +36,6 @@ if __name__ == '__main__':
     graph, labels = build_dependency_graph(script_dir)
     for dependency in get_script_dependencies(graph, args.script_filename, labels):
         print(dependency)
+
+if __name__ == '__main__':
+    main()

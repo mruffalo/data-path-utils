@@ -1,7 +1,7 @@
 from datetime import datetime
 from os import PathLike, scandir
 from pathlib import Path
-from subprocess import Popen, check_output
+from subprocess import DEVNULL, Popen, check_output
 from typing import Iterable, Sequence, Tuple
 
 TIMESTAMP_FORMAT = '%Y%m%d-%H%M%S'
@@ -54,29 +54,29 @@ GIT_FILENAMES = {
 
 def git_revision() -> str:
     command = ['git', 'rev-parse', 'HEAD']
-    revision = check_output(command).decode().strip()
+    revision = check_output(command, stderr=DEVNULL).decode().strip()
     return revision
 
 def git_staged_changes_exist() -> bool:
     command = ['git', 'diff-index', '--quiet', '--cached', 'HEAD']
-    p = Popen(command)
+    p = Popen(command, stdout=DEVNULL, stderr=DEVNULL)
     p.wait()
     return bool(p.returncode)
 
 def git_staged_patch() -> str:
     command = ['git', 'diff', '--cached']
-    patch = check_output(command).decode()
+    patch = check_output(command, stderr=DEVNULL).decode()
     return patch
 
 def git_unstaged_changes_exist() -> bool:
     command = ['git', 'diff-files', '--quiet']
-    p = Popen(command)
+    p = Popen(command, stdout=DEVNULL, stderr=DEVNULL)
     p.wait()
     return bool(p.returncode)
 
 def git_unstaged_patch() -> str:
     command = ['git', 'diff']
-    patch = check_output(command).decode()
+    patch = check_output(command, stderr=DEVNULL).decode()
     return patch
 
 def write_git_data(data_path: Path):

@@ -30,7 +30,7 @@ def get_label_string(node: ast.JoinedStr) -> str:
 def get_argument_label(func_call_node) -> Optional[str]:
     labels = []
     for child in ast.walk(func_call_node):
-        # Should be at most one string descendent of this node
+        # Should be at most one string descendant of this node
         # If there are zero, need to backtrack a few lines
         if isinstance(child, ast.JoinedStr):
             labels.append(get_label_string(child))

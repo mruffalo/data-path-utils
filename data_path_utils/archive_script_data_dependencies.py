@@ -10,9 +10,7 @@ from .dependency_graph import build_dependency_graph
 from . import create_data_path, find_newest_data_path, pathlib_walk
 
 def find_script_data_files(data_nodes: Set[str]) -> Iterable[Path]:
-    alpha_str = f'{alpha:.2f}'
     for node in data_nodes:
-        node = node.replace('param', alpha_str)
         print('Searching for data paths with label', node)
         try:
             input_path = find_newest_data_path(node)

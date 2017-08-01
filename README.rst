@@ -50,19 +50,24 @@ representing both scripts and data paths, and edges denoting a "requires"
 relationship, e.g. "script X requires data label Y, which is produced by
 script Z". This package also contains standalone scripts (which require the
 package NetworkX) that parse the Python files in a certain project, construct
-this graph, and use this graph to provide other useful functionality:
+this graph, and use this graph to provide other useful functionality in the
+form of three standalone executable scripts:
 
-* Plotting this graph, using the ``pydotplus`` package, and a call to the
-  ``dot`` GraphViz executable
+* ``dependency_graph``: Plots this graph, using the ``pydotplus`` package, and
+  a call to the ``dot`` GraphViz executable.
 
-* Listing the data/script dependencies of a certain script, by performing a
-  topological sort on the subset of the graph reachable from a certain script
-  node. Note that this requires that the subgraph reachable from a script node
-  be acyclic (which it should be anyway).
+* ``list_script_dependencies``: takes a script filename as a command-line
+  argument, and produces an ordered list of the data/script dependencies of
+  that script by performing a topological sort on the subset of the graph
+  reachable from that script. Useful for answering questions like "what should
+  I run, in what order, to have everything in place to run this script of
+  interest?" Note that this requires that the subgraph reachable from a script
+  node be acyclic (which it should be anyway).
 
-* Archiving all data dependencies of a certain script, by finding all data
-  nodes reachable from a script node, and adding all files in those data paths
-  to a zip file.
+* ``archive_script_data_dependencies``: takes a script filename as a
+  command-line argument, and identifies all data dependencies of that script.
+  Archives all files under those data paths to a zip file which can easily be
+  transported between machines.
 
 Requirements
 ------------

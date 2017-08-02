@@ -41,6 +41,7 @@ setup(
             'archive_script_data_dependencies=data_path_utils.archive_script_data_dependencies:main',
             'dependency_graph=data_path_utils.dependency_graph:main',
             'list_script_dependencies=data_path_utils.list_script_dependencies:main',
+            'delete_empty_data_paths=data_path_utils.delete_empty_data_paths:main',
         ],
     },
 )

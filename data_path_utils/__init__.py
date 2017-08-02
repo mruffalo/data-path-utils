@@ -51,6 +51,7 @@ GIT_FILENAMES = {
     'staged_patch': 'staged.patch',
     'unstaged_patch': 'unstaged.patch',
 }
+GIT_FILENAME_SET = frozenset(GIT_FILENAMES.values())
 
 def git_revision() -> str:
     command = ['git', 'rev-parse', 'HEAD']
@@ -79,7 +80,7 @@ def git_unstaged_patch() -> str:
     patch = check_output(command, stderr=DEVNULL).decode()
     return patch
 
-def write_git_data(data_path: Path):
+def write_git_metadata(data_path: Path):
     with open(data_path / GIT_FILENAMES['revision'], 'w') as f:
         print(git_revision(), file=f)
 
@@ -104,7 +105,7 @@ def create_output_path(description: str, print_path=True) -> Path:
 def create_data_path(description: str, print_path=True) -> Path:
     data_path = create_path(DATA_PATH, description, 'Data', print_path)
     try:
-        write_git_data(data_path)
+        write_git_metadata(data_path)
     except Exception:
         # Writing Git commit/patch information is a bonus. If we fail,
         # the user probably doesn't have Git available, so it isn't even
@@ -114,6 +115,10 @@ def create_data_path(description: str, print_path=True) -> Path:
 
 def create_slurm_path(description: str, print_path=True) -> Path:
     return create_path(SLURM_PATH, description, 'Slurm', print_path)
+
+def contains_only_git_metadata(path: Path) -> bool:
+    filenames = {f.name for f in path.iterdir()}
+    return not (filenames - GIT_FILENAME_SET)
 
 def find_newest_path(base_path: Path, label: str) -> Path:
     candidates = []
@@ -127,8 +132,7 @@ def find_newest_path(base_path: Path, label: str) -> Path:
                 continue
 
             # Skip empty directories, or those containing only Git data
-            filenames = {f.name for f in child.iterdir()}
-            if not (filenames - set(GIT_FILENAMES.values())):
+            if contains_only_git_metadata(child):
                 continue
 
             dt = datetime.strptime(pieces[1], TIMESTAMP_FORMAT)

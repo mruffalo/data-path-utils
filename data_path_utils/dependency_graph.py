@@ -59,7 +59,7 @@ def get_assignment_value(root_ast_node, assignment_name: str) -> str:
     for node in ast.walk(root_ast_node):
         if isinstance(node, ast.Assign):
             for target in node.targets:
-                if target.id == assignment_name:
+                if hasattr(target, 'id') and (target.id == assignment_name):
                     return find_first_str_value(node.value)
 
 def parse_python_file(file_path: Path) -> Tuple[Sequence[str], Sequence[str]]:

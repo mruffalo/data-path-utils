@@ -120,9 +120,7 @@ def contains_only_git_metadata(path: Path) -> bool:
     filenames = {f.name for f in path.iterdir()}
     return not (filenames - GIT_FILENAME_SET)
 
-def find_newest_path(base_path: Path, label: str) -> Path:
-    candidates = []
-
+def find_all_paths(base_path: Path, label: str) -> Iterable[Path]:
     for child in base_path.iterdir():
         if not child.is_dir():
             continue
@@ -135,6 +133,19 @@ def find_newest_path(base_path: Path, label: str) -> Path:
             if contains_only_git_metadata(child):
                 continue
 
+            yield child
+        except (IndexError, ValueError):
+            continue
+
+def find_all_data_paths(label: str) -> Iterable[Path]:
+    yield from find_all_paths(DATA_PATH, label)
+
+def find_newest_path(base_path: Path, label: str) -> Path:
+    candidates = []
+
+    for child in find_all_paths(base_path, label):
+        try:
+            pieces = child.name.rsplit('_', maxsplit=1)
             dt = datetime.strptime(pieces[1], TIMESTAMP_FORMAT)
             candidates.append((dt, child))
         except (IndexError, ValueError):

@@ -13,7 +13,7 @@ from . import create_output_path, replace_extension
 PYTHON_FILE_PATTERN = '*.py'
 
 data_producer_name = 'create_data_path'
-data_consumer_name = 'find_newest_data_path'
+data_consumer_names = {'find_newest_data_path', 'find_all_data_paths'}
 
 def get_label_string(node: ast.JoinedStr) -> str:
     strings = []
@@ -41,7 +41,7 @@ def get_argument_label(func_call_node) -> Optional[str]:
     if count == 1:
         return labels[0]
     elif count > 1:
-        raise ValueError(f'Unhandled case: multiple strings under call to {data_consumer_name}')
+        raise ValueError('Unhandled case: multiple strings under call to data consumer function')
 
     return None
 
@@ -84,7 +84,7 @@ def parse_python_file(file_path: Path) -> Tuple[Sequence[str], Sequence[str]]:
                 name = func.id
             elif hasattr(func, 'attr'):
                 name = func.attr
-            if name == data_consumer_name:
+            if name in data_consumer_names:
                 label = get_argument_label(node)
                 labels_consumed.append(label)
             elif name == data_producer_name:

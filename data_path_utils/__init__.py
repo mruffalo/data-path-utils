@@ -10,6 +10,17 @@ DATA_PATH = Path('data')
 OUTPUT_PATH = Path('output')
 SLURM_PATH = Path('slurm_generated')
 
+data_producer_names = set()
+data_consumer_names = set()
+
+def producer(function):
+    data_producer_names.add(function.__name__)
+    return function
+
+def consumer(function):
+    data_consumer_names.add(function.__name__)
+    return function
+
 def replace_extension(path: PathLike, new_extension: str) -> Path:
     """
     new_extension can include a leading . or not; doesn't matter
@@ -102,6 +113,7 @@ def create_path(base_path: Path, description: str, path_desc: str, print_path=Tr
 def create_output_path(description: str, print_path=True) -> Path:
     return create_path(OUTPUT_PATH, description, 'Output', print_path)
 
+@producer
 def create_data_path(description: str, print_path=True) -> Path:
     data_path = create_path(DATA_PATH, description, 'Data', print_path)
     try:
@@ -137,6 +149,7 @@ def find_all_paths(base_path: Path, label: str) -> Iterable[Path]:
         except (IndexError, ValueError):
             continue
 
+@consumer
 def find_all_data_paths(label: str) -> Iterable[Path]:
     yield from find_all_paths(DATA_PATH, label)
 
@@ -156,6 +169,7 @@ def find_newest_path(base_path: Path, label: str) -> Path:
 
     return max(candidates)[1]
 
+@consumer
 def find_newest_data_path(label: str) -> Path:
     return find_newest_path(DATA_PATH, label)
 

@@ -8,12 +8,14 @@ from typing import Optional, Sequence, Set, Tuple
 
 import networkx as nx
 
-from . import create_output_path, replace_extension
+from . import (
+    create_output_path,
+    data_consumer_names,
+    data_producer_names,
+    replace_extension,
+)
 
 PYTHON_FILE_PATTERN = '*.py'
-
-data_producer_name = 'create_data_path'
-data_consumer_names = {'find_newest_data_path', 'find_all_data_paths'}
 
 def get_label_string(node: ast.JoinedStr) -> str:
     strings = []
@@ -62,6 +64,19 @@ def get_assignment_value(root_ast_node, assignment_name: str) -> str:
                 if hasattr(target, 'id') and (target.id == assignment_name):
                     return find_first_str_value(node.value)
 
+def get_label(node, root) -> str:
+    label = get_argument_label(node)
+    if label is None:
+        # 'create_data_path' not called with a string constant
+        # figure out name of variable it's called with, the get value
+        # of that variable
+        argument_name = get_argument_name(node)
+        label = get_assignment_value(root, argument_name)
+        return label
+    else:
+        # Easy case: create_data_path called with a string constant
+        return label
+
 def parse_python_file(file_path: Path) -> Tuple[Sequence[str], Sequence[str]]:
     """
     :param file_path: Python file to parse
@@ -85,20 +100,9 @@ def parse_python_file(file_path: Path) -> Tuple[Sequence[str], Sequence[str]]:
             elif hasattr(func, 'attr'):
                 name = func.attr
             if name in data_consumer_names:
-                label = get_argument_label(node)
-                labels_consumed.append(label)
-            elif name == data_producer_name:
-                label = get_argument_label(node)
-                if label is None:
-                    # 'create_data_path' not called with a string constant
-                    # figure out name of variable it's called with, the get value
-                    # of that variable
-                    argument_name = get_argument_name(node)
-                    label = get_assignment_value(parsed, argument_name)
-                    labels_produced.append(label)
-                else:
-                    # Easy case: create_data_path called with a string constant
-                    labels_produced.append(label)
+                labels_consumed.append(get_label(node, parsed))
+            elif name in data_producer_names:
+                labels_produced.append(get_label(node, parsed))
 
     return labels_consumed, labels_produced
 

@@ -125,6 +125,15 @@ def parse_python_file(file_path: Path, string_replacements: Sequence[Tuple[str, 
                 dd.labels_consumed.append(get_label(node, parsed, string_replacements))
             elif name in data_producer_names:
                 dd.labels_produced.append(get_label(node, parsed, string_replacements))
+        elif isinstance(node, ast.Import):
+            for module_alias in node.names:
+                maybe_file_path = file_path.parent / f'{module_alias.name}.py'
+                if maybe_file_path.is_file():
+                    dd.imports.append(maybe_file_path)
+        elif isinstance(node, ast.ImportFrom):
+            maybe_file_path = file_path.parent / f'{node.module}.py'
+            if maybe_file_path.is_file():
+                dd.imports.append(maybe_file_path)
 
     return dd
 
@@ -152,6 +161,8 @@ def build_dependency_graph(script_dir: Path) -> Tuple[nx.DiGraph, Set[str]]:
             g.add_edge(script_path, label)
         for label in dependency_data.labels_produced:
             g.add_edge(label, script_path)
+        for other_path in dependency_data.imports:
+            g.add_edge(script_path, other_path)
 
     return g, labels
 

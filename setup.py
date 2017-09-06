@@ -11,7 +11,7 @@ with open(here / 'README.rst', encoding='utf-8') as f:
 
 setup(
     name='data-path-utils',
-    version='0.5',
+    version='0.6',
     description='Management of scripts that produce/consume data with specific labels',
     long_description=long_description,
     url='https://github.com/mruffalo/data-path-utils',

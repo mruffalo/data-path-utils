@@ -4,7 +4,7 @@ import ast
 from pathlib import Path
 from pprint import pprint
 from subprocess import check_call
-from typing import Optional, Sequence, Set, Tuple
+from typing import NamedTuple, Optional, Sequence, Set, Tuple
 
 import networkx as nx
 
@@ -77,7 +77,23 @@ def get_label(node, root) -> str:
         # Easy case: create_data_path called with a string constant
         return label
 
-def parse_python_file(file_path: Path) -> Tuple[Sequence[str], Sequence[str]]:
+class DependencyData(NamedTuple):
+    labels_consumed: Sequence[str]
+    labels_produced: Sequence[str]
+    # Labels consumed with the `find_all_data_paths` function. These edges
+    # shouldn't be included when performing a topological sort.
+    weak_labels_consumed: Sequence[str]
+    imports: Sequence[Path]
+
+    @classmethod
+    def create(cls):
+        """
+        Convenience function that creates a new instance of this class, with
+        all fields initialized to empty sequences.
+        """
+        return cls([], [], [], [])
+
+def parse_python_file(file_path: Path) -> DependencyData:
     """
     :param file_path: Python file to parse
     :return: 2-tuple of sequences of strings:
@@ -85,8 +101,7 @@ def parse_python_file(file_path: Path) -> Tuple[Sequence[str], Sequence[str]]:
        e.g. 'build_hippie_network')
      [1] Labels provided by this file (any string argument to 'create_data_path')
     """
-    labels_consumed = []
-    labels_produced = []
+    dd = DependencyData.create()
 
     with file_path.open() as f:
         parsed = ast.parse(f.read())
@@ -100,26 +115,26 @@ def parse_python_file(file_path: Path) -> Tuple[Sequence[str], Sequence[str]]:
             elif hasattr(func, 'attr'):
                 name = func.attr
             if name in data_consumer_names:
-                labels_consumed.append(get_label(node, parsed))
+                dd.labels_consumed.append(get_label(node, parsed))
             elif name in data_producer_names:
-                labels_produced.append(get_label(node, parsed))
+                dd.labels_produced.append(get_label(node, parsed))
 
-    return labels_consumed, labels_produced
+    return dd
 
 def build_dependency_graph(script_dir: Path) -> Tuple[nx.DiGraph, Set[str]]:
     g = nx.DiGraph()
     labels = set()
     for script_path in script_dir.glob(PYTHON_FILE_PATTERN):
         try:
-            labels_consumed, labels_produced = parse_python_file(script_path)
+            dependency_data = parse_python_file(script_path)
         except Exception:
             print(f'Failed to parse "{script_path}"')
             raise
 
-        labels.update(labels_consumed, labels_produced)
-        for label in labels_consumed:
+        labels.update(dependency_data.labels_consumed, dependency_data.labels_produced)
+        for label in dependency_data.labels_consumed:
             g.add_edge(script_path, label)
-        for label in labels_produced:
+        for label in dependency_data.labels_produced:
             g.add_edge(label, script_path)
 
     return g, labels

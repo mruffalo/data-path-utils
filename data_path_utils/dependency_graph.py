@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser
 import ast
+import json
 from pathlib import Path
 from pprint import pprint
 from subprocess import check_call
@@ -64,7 +65,13 @@ def get_assignment_value(root_ast_node, assignment_name: str) -> str:
                 if hasattr(target, 'id') and (target.id == assignment_name):
                     return find_first_str_value(node.value)
 
-def get_label(node, root) -> str:
+# TODO refactor into a class instead of passing string_replacements around so much
+def adjust_label(label: str, string_replacements: Sequence[Tuple[str, str]]) -> str:
+    for bad, good in string_replacements:
+        label = label.replace(bad, good)
+    return label
+
+def get_label(node, root, string_replacements: Sequence[Tuple[str, str]]) -> str:
     label = get_argument_label(node)
     if label is None:
         # 'create_data_path' not called with a string constant
@@ -72,10 +79,10 @@ def get_label(node, root) -> str:
         # of that variable
         argument_name = get_argument_name(node)
         label = get_assignment_value(root, argument_name)
-        return label
+        return adjust_label(label, string_replacements)
     else:
         # Easy case: create_data_path called with a string constant
-        return label
+        return adjust_label(label, string_replacements)
 
 class DependencyData(NamedTuple):
     labels_consumed: Sequence[str]
@@ -93,7 +100,7 @@ class DependencyData(NamedTuple):
         """
         return cls([], [], [], [])
 
-def parse_python_file(file_path: Path) -> DependencyData:
+def parse_python_file(file_path: Path, string_replacements: Sequence[Tuple[str, str]]) -> DependencyData:
     """
     :param file_path: Python file to parse
     :return: 2-tuple of sequences of strings:
@@ -115,18 +122,27 @@ def parse_python_file(file_path: Path) -> DependencyData:
             elif hasattr(func, 'attr'):
                 name = func.attr
             if name in data_consumer_names:
-                dd.labels_consumed.append(get_label(node, parsed))
+                dd.labels_consumed.append(get_label(node, parsed, string_replacements))
             elif name in data_producer_names:
-                dd.labels_produced.append(get_label(node, parsed))
+                dd.labels_produced.append(get_label(node, parsed, string_replacements))
 
     return dd
+
+def read_string_replacement_file(script_dir: Path) -> Sequence[Tuple[str, str]]:
+    replacements: Sequence[Tuple[str, str]] = []
+    replacement_file = script_dir / 'string_replacements.json'
+    if replacement_file.is_file():
+        with open(replacement_file) as f:
+            replacements = json.load(f)
+    return replacements
 
 def build_dependency_graph(script_dir: Path) -> Tuple[nx.DiGraph, Set[str]]:
     g = nx.DiGraph()
     labels = set()
+    string_replacements = read_string_replacement_file(script_dir)
     for script_path in script_dir.glob(PYTHON_FILE_PATTERN):
         try:
-            dependency_data = parse_python_file(script_path)
+            dependency_data = parse_python_file(script_path, string_replacements)
         except Exception:
             print(f'Failed to parse "{script_path}"')
             raise

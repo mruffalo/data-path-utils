@@ -17,7 +17,7 @@ def get_script_dependencies(graph: nx.DiGraph, script: Path, data_labels: Set[st
     node_types = ['script', 'data']
     max_node_type_length = max(len(t) for t in node_types)
 
-    for node in nx.topological_sort(subgraph, reverse=True):
+    for node in reversed(list(nx.topological_sort(subgraph))):
         sel = int(node in data_labels)
         yield '{}{:>{}}: {}{}'.format(
             COLORS[sel],

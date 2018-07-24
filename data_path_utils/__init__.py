@@ -103,19 +103,22 @@ def write_git_metadata(data_path: Path):
         with open(data_path / GIT_FILENAMES['unstaged_patch'], 'w') as f:
             print(git_unstaged_patch(), file=f)
 
-def create_path(base_path: Path, description: str, path_desc: str, print_path=True) -> Path:
-    path = base_path / '{}_{}'.format(description, get_now_str())
-    ensure_dir(path)
-    if print_path:
-        print(f'{path_desc} directory: {path}')
-    return path
+def create_paths(base_paths: Sequence[Path], label: str, print_path=True) -> Sequence[Path]:
+    new_paths = []
+    for base_path in base_paths:
+        path = base_path / '{}_{}'.format(label, get_now_str())
+        ensure_dir(path)
+        new_paths.append(path)
+        if print_path:
+            print('Created:', path)
+    return new_paths
 
-def create_output_path(description: str, print_path=True) -> Path:
-    return create_path(OUTPUT_PATH, description, 'Output', print_path)
+def create_output_path(label: str, print_path=True) -> Path:
+    return create_paths([OUTPUT_PATH], label, print_path)[0]
 
 @producer
-def create_data_path(description: str, print_path=True) -> Path:
-    data_path = create_path(DATA_PATH, description, 'Data', print_path)
+def create_data_path(label: str, print_path=True) -> Path:
+    data_path = create_paths([DATA_PATH], label, print_path)[0]
     try:
         write_git_metadata(data_path)
     except Exception:
@@ -125,8 +128,24 @@ def create_data_path(description: str, print_path=True) -> Path:
         pass
     return data_path
 
+def create_data_output_paths(label: str, print_path=True) -> Tuple[Path, Path]:
+    """
+    :return: a 2-tuple:
+     [0] data path
+     [1] output path
+    """
+    paths: Tuple[Path, Path] = tuple(create_paths([DATA_PATH, OUTPUT_PATH], label, print_path))
+    try:
+        write_git_metadata(paths[0])
+    except Exception:
+        # Writing Git commit/patch information is a bonus. If we fail,
+        # the user probably doesn't have Git available, so it isn't even
+        # worth reporting this.
+        pass
+    return paths
+
 def create_slurm_path(description: str, print_path=True) -> Path:
-    return create_path(SLURM_PATH, description, 'Slurm', print_path)
+    return create_paths([SLURM_PATH], description, print_path)[0]
 
 def contains_only_git_metadata(path: Path) -> bool:
     filenames = {f.name for f in path.iterdir()}

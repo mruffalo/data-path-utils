@@ -128,6 +128,7 @@ def create_data_path(label: str, print_path=True) -> Path:
         pass
     return data_path
 
+@producer
 def create_data_output_paths(label: str, print_path=True) -> Tuple[Path, Path]:
     """
     :return: a 2-tuple:
